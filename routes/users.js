@@ -1,8 +1,10 @@
 const router = require('express').Router();
-const { getFilms, createFilm } = require('../controllers/films');
+const { getUsers, getUserById, createUser, patchUser, patchUserAvatar } = require('../controllers/users');
 
-router.get('/users', getFilms);
-router.get('/users/:userId', createFilm);
-router.post('/users', createFilm);
+router.get('/', getUsers);
+router.get('/:userId', getUserById);
+router.post('/', createUser);
+router.patch('/me', patchUser);
+router.patch('/me/avatar', patchUserAvatar);
 
 module.exports = router;
