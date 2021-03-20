@@ -19,10 +19,7 @@ const createCard = (req, res) => {
 };
 
 const deleteCardById = (req, res) => {
-	console.log('это работает?');
-	console.log(req);
-
-	Card.findByIdAndRemove(req.params.id)
+	Card.findByIdAndRemove(req.params.cardId)
 		.then((card) => {
 			if (!card) {
 				return res.status(404).send({ message: 'Карточка не найдена' });
@@ -32,4 +29,34 @@ const deleteCardById = (req, res) => {
 		.catch((err) => res.status(500).send({ message: 'Произошла ошибка' }));
 };
 
-module.exports = { getCards, createCard, deleteCardById };
+const putLike = (req, res) => {
+	Card.findByIdAndUpdate(
+		req.params.cardId,
+		{ $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
+		{ new: true }
+	)
+		.then((card) => {
+			if (!card) {
+				return res.status(404).send({ message: 'Карточка не найдена' });
+			}
+			res.status(200).send(card);
+		})
+		.catch((err) => res.status(500).send({ message: 'Произошла ошибка' }));
+};
+
+const deleteLike = (req, res) => {
+	Card.findByIdAndUpdate(
+		req.params.cardId,
+		{ $pull: { likes: req.user._id } }, // убрать _id из массива
+		{ new: true }
+	)
+		.then((card) => {
+			if (!card) {
+				return res.status(404).send({ message: 'Карточка не найдена' });
+			}
+			res.status(200).send(card);
+		})
+		.catch((err) => res.status(500).send({ message: 'Произошла ошибка' }));
+};
+
+module.exports = { getCards, createCard, deleteCardById, putLike, deleteLike };
