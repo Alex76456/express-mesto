@@ -3,22 +3,25 @@ const User = require('../models/user');
 const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(200).send(users))
-    .catch((err) => res.status(500).send({ message: 'Произошла ошибка' }));
+    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
 };
 
 const getUserById = (req, res) => {
-  console.log(req.params.userId);
   User.findById(req.params.userId)
     .then((user) => {
-      console.log(user);
       if (!user) {
-        return res.status(404).send({ message: 'Пользователь по указанному _id не найден.' });
+        return res
+          .status(404)
+          .send({ message: 'Пользователь по указанному _id не найден.' });
       }
-      res.status(200).send(user);
+      return res.status(200).send(user);
     })
     .catch((err) => {
-      console.log(err.name);
-      res.status(500).send({ message: 'Произошла ошибка' });
+      if (err.name === 'CastError') {
+        res.status(400).send({ message: 'ошибка валидации userID' });
+      } else {
+        res.status(500).send({ message: 'Произошла ошибка' });
+      }
     });
 };
 
@@ -27,7 +30,7 @@ const createUser = (req, res) => {
 
   User.create({ name, about, avatar }).then((user) => res.status(201).send(user)).catch((err) => {
     if (err.name === 'ValidationError') {
-      res.status(400).send({ message: `${Object.values(err.errors).map((error) => error.message).join(', ')}` });
+      res.status(400).send({ message: 'ошибка валидации данных' });
     } else {
       res.status(500).send({ message: 'Произошла ошибка' });
     }
@@ -46,15 +49,16 @@ const patchUser = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        return res.status(404).send({ message: 'Пользователь по указанному _id не найден.' });
+        return res
+          .status(404)
+          .send({ message: 'Пользователь по указанному _id не найден.' });
       }
-      res.status(200).send(user);
+
+      return res.status(200).send(user);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res
-          .status(400)
-          .send({ message: `${Object.values(err.errors).map((error) => error.message).join(', ')}` });
+      if (err.name === 'CastError') {
+        res.status(400).send({ message: 'ошибка валидации данных' });
       } else {
         res.status(500).send({ message: 'Произошла ошибка' });
       }
@@ -63,6 +67,7 @@ const patchUser = (req, res) => {
 
 const patchUserAvatar = (req, res) => {
   const { avatar } = req.body;
+
   User.findByIdAndUpdate(
     req.user._id,
     { avatar },
@@ -73,15 +78,15 @@ const patchUserAvatar = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        return res.status(404).send({ message: 'Пользователь по указанному _id не найден.' });
+        return res
+          .status(404)
+          .send({ message: 'Пользователь по указанному _id не найден.' });
       }
-      res.status(200).send(user);
+      return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
-          .status(400)
-          .send({ message: `${Object.values(err.errors).map((error) => error.message).join(', ')}` });
+        res.status(400).send({ message: 'ошибка валидации данных' });
       } else {
         res.status(500).send({ message: 'Произошла ошибка' });
       }
