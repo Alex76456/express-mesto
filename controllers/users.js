@@ -2,56 +2,54 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const getUsers = (req, res) => {
-	User.find({})
-		.then((users) => res.status(200).send(users))
-		.catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+const NotFoundError = require('../middlewares/errors/NotFoundError');
+const BadRequestError = require('../middlewares/errors/BadRequestError');
+const ConflictError = require('../middlewares/errors/ConflictError');
+
+const getUsers = (req, res, next) => {
+	User.find({}).then((users) => res.status(200).send(users)).catch(next);
 };
 
-const getMe = (req, res) => {
-	console.log(req.user._id);
+const getMe = (req, res, next) => {
 	User.findById(req.user._id)
 		.then((user) => {
 			if (!user) {
-				return res
-					.status(404)
-					.send({ message: 'Пользователь по указанному _id не найден.' });
+				throw new NotFoundError('Пользователь по указанному _id не найден.');
+			} else {
+				return res.status(200).send(user);
 			}
-			return res.status(200).send(user);
 		})
 		.catch((err) => {
 			if (err.name === 'CastError') {
-				res.status(400).send({ message: 'ошибка валидации userID' });
+				next(new BadRequestError('ошибка валидации userID'));
 			} else {
-				res.status(500).send({ message: 'Произошла ошибка' });
+				next(err);
 			}
 		});
 };
 
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
 	User.findById(req.params.userId)
 		.then((user) => {
 			if (!user) {
-				return res
-					.status(404)
-					.send({ message: 'Пользователь по указанному _id не найден.' });
+				throw new NotFoundError('Пользователь по указанному _id не найден.');
 			}
 			return res.status(200).send(user);
 		})
 		.catch((err) => {
 			if (err.name === 'CastError') {
-				res.status(400).send({ message: 'ошибка валидации userID' });
+				next(new BadRequestError('ошибка валидации userID'));
 			} else {
-				res.status(500).send({ message: 'Произошла ошибка' });
+				next(err);
 			}
 		});
 };
 
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
 	const { name, about, avatar, email, password } = req.body;
 
 	if (!email || !password) {
-		return res.status(400).send({ message: 'email или пароль не должен быть пустым' });
+		throw new BadRequestError('email или пароль не должен быть пустым');
 	}
 
 	bcrypt
@@ -67,18 +65,17 @@ const createUser = (req, res) => {
 		)
 		.then((user) => res.status(201).send(user))
 		.catch((err) => {
-			console.log(err.name);
 			if (err.name === 'ValidationError') {
-				res.status(400).send({ message: 'ошибка валидации данных' });
-			} else if (err.name === 'MongoError') {
-				res.status(403).send({ message: 'пользователь уже существует' });
+				next(new BadRequestError('ошибка валидации userID'));
+			} else if (err.name === 'MongoError' && err.code === 11000) {
+				next(new ConflictError('пользователь уже существует'));
 			} else {
-				res.status(500).send({ message: 'Произошла ошибка' });
+				next(err);
 			}
 		});
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
 	const { email, password } = req.body;
 
 	return User.findUserByCredentials(email, password)
@@ -87,12 +84,10 @@ const login = (req, res) => {
 				token: jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' })
 			});
 		})
-		.catch(() => {
-			res.status(401).send({ message: 'Почта или пароль неверны' });
-		});
+		.catch(next);
 };
 
-const patchUser = (req, res) => {
+const patchUser = (req, res, next) => {
 	const { name, about } = req.body;
 	User.findByIdAndUpdate(
 		req.user._id,
@@ -104,23 +99,21 @@ const patchUser = (req, res) => {
 	)
 		.then((user) => {
 			if (!user) {
-				return res
-					.status(404)
-					.send({ message: 'Пользователь по указанному _id не найден.' });
+				throw new NotFoundError('Пользователь по указанному _id не найден.');
 			}
 
 			return res.status(200).send(user);
 		})
 		.catch((err) => {
 			if (err.name === 'CastError' || err.name === 'ValidationError') {
-				res.status(400).send({ message: 'ошибка валидации данных' });
+				next(new BadRequestError('ошибка валидации данных'));
 			} else {
-				res.status(500).send({ message: 'Произошла ошибка' });
+				next(err);
 			}
 		});
 };
 
-const patchUserAvatar = (req, res) => {
+const patchUserAvatar = (req, res, next) => {
 	const { avatar } = req.body;
 
 	User.findByIdAndUpdate(
@@ -133,17 +126,15 @@ const patchUserAvatar = (req, res) => {
 	)
 		.then((user) => {
 			if (!user) {
-				return res
-					.status(404)
-					.send({ message: 'Пользователь по указанному _id не найден.' });
+				throw new NotFoundError('Пользователь по указанному _id не найден.');
 			}
 			return res.status(200).send(user);
 		})
 		.catch((err) => {
 			if (err.name === 'ValidationError') {
-				res.status(400).send({ message: 'ошибка валидации данных' });
+				next(new BadRequestError('ошибка валидации данных'));
 			} else {
-				res.status(500).send({ message: 'Произошла ошибка' });
+				next(err);
 			}
 		});
 };
