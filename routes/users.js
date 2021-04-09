@@ -4,31 +4,17 @@ const validator = require('validator');
 const { celebrate, Joi, CelebrateError } = require('celebrate');
 const auth = require('../middlewares/auth');
 
-const validateUserSignup = celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(30),
-    avatar: Joi.string().custom((url) => {
-      if (!validator.isURL(url)) {
-        throw new CelebrateError('Неверный URL');
-      }
-      return url;
-    }),
-  }),
-});
-
-const validateUserLogin = celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-  }),
-});
+const {
+  getUsers,
+  getUserById,
+  patchUser,
+  patchUserAvatar,
+  getMe,
+} = require('../controllers/users');
 
 const validateId = celebrate({
   params: Joi.object().keys({
-    _id: Joi.string().alphanum().length(24),
+    userId: Joi.string().alphanum().length(24).hex(),
   }),
 });
 
@@ -49,19 +35,6 @@ const validateUserAvatar = celebrate({
     }),
   }),
 });
-
-const {
-  getUsers,
-  getUserById,
-  createUser,
-  patchUser,
-  patchUserAvatar,
-  login,
-  getMe,
-} = require('../controllers/users');
-
-router.post('/signup', validateUserSignup, createUser);
-router.post('/signin', validateUserLogin, login);
 
 router.use(auth);
 router.get('/', getUsers);
