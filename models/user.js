@@ -5,6 +5,8 @@ const isEmail = require('validator/lib/isEmail');
 
 const UnauthorizedError = require('../middlewares/errors/UnauthorizedError');
 
+/* validator: (v) => validator.isURL(v), */
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -22,12 +24,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
-      /* validator: (v) => validator.isURL(v), */
-      validator: (v) => {
-        const regexp = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w\W.-]*)#?$/g;
-        return regexp.test(v);
+      validator(v) {
+        return /^(https?:\/\/)([\da-z.-]+)\.([a-z.]{2,6})([/\w\W.-]*)#?$/g.test(v);
       },
-      message: 'Ссылка неверна ',
+      message: 'Ссылка неверна',
     },
   },
   email: {
