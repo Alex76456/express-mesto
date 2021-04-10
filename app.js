@@ -16,6 +16,7 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useCreateIndex: true,
   useFindAndModify: false,
   useUnifiedTopology: true,
+  runValidators: true,
 });
 
 app.use(bodyParser.json());

@@ -14,7 +14,7 @@ const createCard = (req, res, next) => {
     .then((card) => res.status(201).send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        throw new BadRequestError('ошибка валидации данных');
+        next(new BadRequestError('ошибка валидации данных'));
       } else {
         next(err);
       }
